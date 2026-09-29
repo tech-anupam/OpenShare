@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const deleted = deleteExpiredShares();
+  const deleted = await deleteExpiredShares();
 
   return NextResponse.json({
     deleted,

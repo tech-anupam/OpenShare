@@ -8,7 +8,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const share = getShare(id);
+  const share = await getShare(id);
 
   if (!share) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -33,7 +33,7 @@ export async function GET(
   };
 
   if (!share.password_hash) {
-    incrementViews(id);
+    await incrementViews(id);
 
     let content = share.content;
     let cdn = null;
@@ -58,7 +58,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const share = getShare(id);
+  const share = await getShare(id);
 
   if (!share) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -84,7 +84,7 @@ export async function POST(
     return NextResponse.json({ error: "Wrong password" }, { status: 403 });
   }
 
-  incrementViews(id);
+  await incrementViews(id);
 
   return NextResponse.json({
     content: share.content,

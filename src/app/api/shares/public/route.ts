@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getPublicShares } from "@/lib/db";
 
 export async function GET() {
-  const shares = getPublicShares(50);
+  const shares = await getPublicShares(50);
 
   const safe = shares.map((s) => ({
     id: s.id,

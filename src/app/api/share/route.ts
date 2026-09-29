@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
       passwordHash = await hashPassword(password);
     }
 
-    createShare({
+    await createShare({
       id,
       type,
       content,

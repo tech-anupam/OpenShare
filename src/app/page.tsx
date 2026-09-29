@@ -150,7 +150,11 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null);
 
   const toast = useToast();
-  const { startUpload } = useUploadThing("fileUploader");
+  const { startUpload } = useUploadThing("fileUploader", {
+    onUploadProgress: (p) => {
+      setUploadProgress(Math.max(10, Math.min(p, 88)));
+    },
+  });
 
   useEffect(() => {
     const draft = loadDraft();
@@ -181,11 +185,7 @@ export default function HomePage() {
 
     try {
       if (mode === "file" && file) {
-        const uploadResult = await startUpload([file], {
-          onUploadProgress: ({ progress }) => {
-            setUploadProgress(Math.max(10, Math.min(progress, 88)));
-          },
-        });
+        const uploadResult = await startUpload([file]);
 
         if (!uploadResult || uploadResult.length === 0) {
           throw new Error("Upload failed. Please check network and try again.");

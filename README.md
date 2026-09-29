@@ -50,7 +50,7 @@ OpenShare is a zero-account, anonymous file and paste sharing platform. Everythi
 - **Magnetic Particles**: Ambient cursor-reactive particle constellation background
 - **Toast Notifications**: Built-in glassmorphism alerts for errors and actions
 - **Mobile First**: Minimal, pill-sized floating navigation and responsive layout
-- **Analytics Ready**: Google Analytics 4 integration with custom event tracking
+- **Privacy Analytics**: Microsoft Clarity heatmaps and session analytics integration
 
 ---
 
@@ -67,7 +67,7 @@ OpenShare is a zero-account, anonymous file and paste sharing platform. Everythi
 | Markdown | react-markdown + remark-gfm |
 | Encryption | Web Crypto API (AES-GCM + PBKDF2) |
 | Forms | Web3Forms |
-| Analytics | Google Analytics 4 |
+| Analytics | Microsoft Clarity |
 | Package Manager | pnpm |
 
 ---
@@ -102,7 +102,7 @@ CRON_SECRET=your_random_cron_secret_here
 NEXT_PUBLIC_APP_URL=https://openshare.vercel.app
 NEXT_PUBLIC_GITHUB_REPO=tech-anupam/OpenShare
 NEXT_PUBLIC_IMAGEKIT_ENDPOINT=https://ik.imagekit.io/openshare
-NEXT_PUBLIC_GA_ID=G-XXXXXXXXXX
+NEXT_PUBLIC_CLARITY_ID=your_clarity_project_id
 ```
 
 ### Run
@@ -156,7 +156,7 @@ src/
   hooks/
     use-theme.tsx           Theme context with circular clip-path transition
   lib/
-    analytics.ts            Google Analytics pageview and event helpers
+    analytics.ts            Microsoft Clarity event tracking helpers
     cdn.ts                  ImageKit and wsrv.nl optimization pipeline
     constants.ts            Application constants and greeting list
     crypto.ts               Client-side AES-GCM and PBKDF2 encryption
@@ -231,14 +231,21 @@ Give the repository a star on GitHub: [tech-anupam/OpenShare](https://github.com
 - **UPI ID**: `anupambuilds@fam`
 
 ### Crypto Wallets
-- **Bitcoin (BTC)**: `bc1qyouraddresshere`
-- **Ethereum (ETH)**: `0xYourETHAddressHere`
-- **Solana (SOL)**: `YourSolanaAddressHere`
+- **Bitcoin (BTC)**: `bc1q9f5l4ryr08pqufh3p3xv57lwnsz9z9gupd8yzs`
+- **Ethereum (ETH)**: `0xdf2122B4a567CA6908Bbece014492998795f694D`
+- **Solana (SOL)**: `EZXYEDuqWzzEPjEtg1wzNeErXy52MBDMAhYrVs8gG2s8`
 
 ---
 
 ## Contributing
 
+Contributions are welcome. Areas of interest for contributors:
+
+- **Open Source Fallback Services**: Adding zero-API or open-source storage backends (e.g. self-hosted S3/MinIO, IPFS, Web3, or peer-to-peer WebRTC file streaming).
+- **Free CDN Providers**: Additional public edge transformers and caching providers without requiring account setups.
+- **Preview Renderers**: Expanded inline preview support for 3D files (STL/OBJ), spreadsheets (CSV), or audio waveforms.
+
+To contribute:
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
 3. Commit your changes (`git commit -m "Add amazing feature"`)

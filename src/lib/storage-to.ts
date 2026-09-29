@@ -57,7 +57,7 @@ async function uploadToPresigned(
     headers: {
       "Content-Type": mimeType,
     },
-    body: fileBuffer,
+    body: fileBuffer as unknown as BodyInit,
   });
 
   if (!res.ok) {

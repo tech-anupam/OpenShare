@@ -4,7 +4,7 @@ const ITERATIONS = 100_000;
 const SALT_LENGTH = 16;
 const IV_LENGTH = 12;
 
-function toBase64(buffer: ArrayBuffer): string {
+function toBase64(buffer: ArrayBuffer | ArrayBufferLike): string {
   return btoa(String.fromCharCode(...new Uint8Array(buffer)));
 }
 
@@ -33,7 +33,7 @@ async function deriveKey(
   return crypto.subtle.deriveKey(
     {
       name: "PBKDF2",
-      salt,
+      salt: salt as BufferSource,
       iterations: ITERATIONS,
       hash: "SHA-256",
     },
@@ -54,7 +54,7 @@ export async function encrypt(
   const key = await deriveKey(password, salt);
 
   const encrypted = await crypto.subtle.encrypt(
-    { name: ALGO, iv },
+    { name: ALGO, iv: iv as BufferSource },
     key,
     encoder.encode(data)
   );
@@ -78,7 +78,7 @@ export async function decrypt(
   const key = await deriveKey(password, saltBuffer);
 
   const decrypted = await crypto.subtle.decrypt(
-    { name: ALGO, iv: ivBuffer },
+    { name: ALGO, iv: ivBuffer as BufferSource },
     key,
     fromBase64(encryptedData)
   );
@@ -100,7 +100,7 @@ export async function hashPassword(password: string): Promise<string> {
   const bits = await crypto.subtle.deriveBits(
     {
       name: "PBKDF2",
-      salt,
+      salt: salt as BufferSource,
       iterations: ITERATIONS,
       hash: "SHA-256",
     },
@@ -129,7 +129,7 @@ export async function verifyPassword(
   const bits = await crypto.subtle.deriveBits(
     {
       name: "PBKDF2",
-      salt,
+      salt: salt as BufferSource,
       iterations: ITERATIONS,
       hash: "SHA-256",
     },

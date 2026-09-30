@@ -197,6 +197,30 @@ export function ViewFile({ url, downloadUrl, fileName, fileSize, fileType, share
 
   const handleDownload = async (e: React.MouseEvent) => {
     e.preventDefault();
+
+    // 1. If in-memory blob or data URL (e.g. decrypted client-side)
+    if (dlUrl.startsWith("blob:") || dlUrl.startsWith("data:")) {
+      const a = document.createElement("a");
+      a.href = dlUrl;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      return;
+    }
+
+    // 2. If valid shareId, stream via dedicated download endpoint with Content-Disposition: attachment
+    if (shareId) {
+      const a = document.createElement("a");
+      a.href = `/api/share/${shareId}/download`;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      return;
+    }
+
+    // 3. Fallback: attempt blob fetch
     try {
       const response = await fetch(dlUrl);
       const blob = await response.blob();
@@ -209,7 +233,6 @@ export function ViewFile({ url, downloadUrl, fileName, fileSize, fileType, share
       document.body.removeChild(a);
       URL.revokeObjectURL(blobUrl);
     } catch {
-      // Fallback: open in new tab
       window.open(dlUrl, "_blank");
     }
   };

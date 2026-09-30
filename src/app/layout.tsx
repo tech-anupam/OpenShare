@@ -8,10 +8,36 @@ import { SplashScreen } from "@/components/splash-screen";
 import { WebGLBackground } from "@/components/webgl-background";
 import { ToastProvider } from "@/components/toast";
 
+const siteUrl =
+  process.env.NEXT_PUBLIC_APP_URL ||
+  (process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : "https://opensharee.vercel.app");
+
 export const metadata: Metadata = {
-  title: "OpenShare",
-  description: "Anonymous file and paste sharing with encryption",
-  icons: { icon: "/favicon.ico" },
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "OpenShare",
+    template: "%s | OpenShare",
+  },
+  description: "Anonymous file and paste sharing with client-side encryption",
+  openGraph: {
+    title: "OpenShare",
+    description: "Anonymous file and paste sharing with client-side encryption",
+    siteName: "OpenShare",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "OpenShare",
+    description: "Anonymous file and paste sharing with client-side encryption",
+  },
+  icons: {
+    icon: "/icon",
+    apple: "/icon",
+  },
 };
 
 const CLARITY_ID = process.env.NEXT_PUBLIC_CLARITY_ID || "ypvctmfjct";

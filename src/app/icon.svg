@@ -1,0 +1,21 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="os-logo-bg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="45%" stop-color="#3b82f6" />
+      <stop offset="100%" stop-color="#6366f1" />
+    </linearGradient>
+    <linearGradient id="os-logo-beam" x1="16" y1="5" x2="16" y2="21" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#e0e7ff" />
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="9" fill="url(#os-logo-bg)" />
+  <path d="M1 9.5C1 4.80558 4.80558 1 9.5 1H22.5C27.1944 1 31 4.80558 31 9.5V11H1V9.5Z" fill="white" fill-opacity="0.12" />
+  <path d="M8.5 20.5V23C8.5 24.1046 9.39543 25 10.5 25H21.5C22.6046 25 23.5 24.1046 23.5 23V20.5" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M16 7V19" stroke="url(#os-logo-beam)" stroke-width="2.4" stroke-linecap="round" />
+  <path d="M11 12L16 7L21 12" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+  <circle cx="16" cy="7" r="1.8" fill="white" />
+  <circle cx="8.5" cy="15" r="1.5" fill="#bae6fd" />
+  <circle cx="23.5" cy="15" r="1.5" fill="#c7d2fe" />
+</svg>

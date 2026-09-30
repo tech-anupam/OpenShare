@@ -2,11 +2,24 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { GREETINGS, APP_NAME } from "@/lib/constants";
+import { OpenShareLogo } from "@/components/icons";
 
 export function SplashScreen() {
-  const [phase, setPhase] = useState<"greetings" | "final" | "done">("greetings");
+  const [phase, setPhase] = useState<"greetings" | "final" | "done">("done");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [exiting, setExiting] = useState(false);
+
+  useEffect(() => {
+    try {
+      const splashed = sessionStorage.getItem("openshare_splashed");
+      if (!splashed) {
+        sessionStorage.setItem("openshare_splashed", "1");
+        setPhase("greetings");
+      }
+    } catch {
+      // In case storage is blocked
+    }
+  }, []);
 
   const advanceGreeting = useCallback(() => {
     if (currentIndex < GREETINGS.length - 1) {
@@ -55,15 +68,17 @@ export function SplashScreen() {
       )}
 
       {phase === "final" && (
-        <span
-          className="greeting-final"
-          style={{
-            fontSize: "clamp(2.5rem, 10vw, 6rem)",
-            color: "var(--text-primary)",
-          }}
-        >
-          {APP_NAME}
-        </span>
+        <div className="flex items-center gap-4 greeting-final">
+          <OpenShareLogo size={56} />
+          <span
+            style={{
+              fontSize: "clamp(2.5rem, 10vw, 5.5rem)",
+              color: "var(--text-primary)",
+            }}
+          >
+            {APP_NAME}
+          </span>
+        </div>
       )}
     </div>
   );

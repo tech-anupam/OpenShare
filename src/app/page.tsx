@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { UploadZone } from "@/components/upload-zone";
 import { PasteEditor } from "@/components/paste-editor";
-import { ShareOptions } from "@/components/share-options";
+import { ShareModal } from "@/components/share-modal";
 import { ShareResult } from "@/components/share-result";
 import { ViewFile } from "@/components/view-file";
 import { ViewPaste } from "@/components/view-paste";
@@ -12,12 +12,15 @@ import {
   PasteIcon,
   CheckIcon,
   LoaderIcon,
+  ZapIcon,
+  OpenShareLogo,
 } from "@/components/icons";
 import { DEFAULT_EXPIRY } from "@/lib/constants";
 import { useUploadThing } from "@/lib/uploadthing";
 import { encrypt } from "@/lib/crypto";
 import { trackShareCreated } from "@/lib/analytics";
 import { useToast } from "@/components/toast";
+import { useScrollReveal } from "@/hooks/use-gsap";
 
 type Mode = "file" | "paste";
 type Step = "input" | "uploading" | "done";
@@ -60,6 +63,11 @@ function UploadProgressRing({
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
     return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+  };
+
+  const stripExt = (name: string) => {
+    const dot = name.lastIndexOf(".");
+    return dot > 0 ? name.substring(0, dot) : name;
   };
 
   const statusText =
@@ -114,7 +122,7 @@ function UploadProgressRing({
         </p>
         {fileName && (
           <p className="text-xs truncate max-w-xs mx-auto" style={{ color: "var(--text-muted)" }}>
-            {fileName} {fileSize ? `(${formatSize(fileSize)})` : ""}
+            {stripExt(fileName)} {fileSize ? `(${formatSize(fileSize)})` : ""}
           </p>
         )}
       </div>
@@ -148,6 +156,12 @@ export default function HomePage() {
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [bodyDragging, setBodyDragging] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const heroRef = useScrollReveal<HTMLDivElement>();
+  const uploadRef = useScrollReveal<HTMLDivElement>();
+  const optionsRef = useScrollReveal<HTMLDivElement>();
 
   const toast = useToast();
   const { startUpload } = useUploadThing("fileUploader", {
@@ -156,6 +170,7 @@ export default function HomePage() {
     },
   });
 
+  // Restore draft
   useEffect(() => {
     const draft = loadDraft();
     if (draft) {
@@ -166,11 +181,89 @@ export default function HomePage() {
     }
   }, []);
 
+  // Save draft
   useEffect(() => {
     if (step === "input") {
       saveDraft({ mode, pasteContent, expiry, isPublic });
     }
   }, [mode, pasteContent, expiry, isPublic, step]);
+
+  // Global body drag & drop + paste detection
+  useEffect(() => {
+    let dragCounter = 0;
+
+    const handleDragEnter = (e: DragEvent) => {
+      e.preventDefault();
+      dragCounter++;
+      if (e.dataTransfer?.types.includes("Files")) {
+        setBodyDragging(true);
+        setMode("file");
+      }
+    };
+
+    const handleDragLeave = (e: DragEvent) => {
+      e.preventDefault();
+      dragCounter--;
+      if (dragCounter <= 0) {
+        dragCounter = 0;
+        setBodyDragging(false);
+      }
+    };
+
+    const handleDragOver = (e: DragEvent) => {
+      e.preventDefault();
+    };
+
+    const handleDrop = (e: DragEvent) => {
+      e.preventDefault();
+      dragCounter = 0;
+      setBodyDragging(false);
+      const droppedFile = e.dataTransfer?.files[0];
+      if (droppedFile && droppedFile.size <= 512 * 1024 * 1024) {
+        setMode("file");
+        setFile(droppedFile);
+        toast.success(`File "${droppedFile.name}" ready to share!`);
+      }
+    };
+
+    const handlePaste = (e: ClipboardEvent) => {
+      // Skip if we're in a text input or textarea
+      const target = e.target as HTMLElement;
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) {
+        return;
+      }
+
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].kind === "file") {
+          const pastedFile = items[i].getAsFile();
+          if (pastedFile && pastedFile.size <= 512 * 1024 * 1024) {
+            e.preventDefault();
+            setMode("file");
+            setFile(pastedFile);
+            toast.success(`Pasted file ready to share!`);
+            return;
+          }
+        }
+      }
+    };
+
+    document.addEventListener("dragenter", handleDragEnter);
+    document.addEventListener("dragleave", handleDragLeave);
+    document.addEventListener("dragover", handleDragOver);
+    document.addEventListener("drop", handleDrop);
+    document.addEventListener("paste", handlePaste);
+
+    return () => {
+      document.removeEventListener("dragenter", handleDragEnter);
+      document.removeEventListener("dragleave", handleDragLeave);
+      document.removeEventListener("dragover", handleDragOver);
+      document.removeEventListener("drop", handleDrop);
+      document.removeEventListener("paste", handlePaste);
+    };
+  }, [toast]);
 
   const hasContent =
     (mode === "file" && file !== null) ||
@@ -326,7 +419,7 @@ export default function HomePage() {
 
         <button
           onClick={reset}
-          className="w-full py-3 rounded-2xl text-sm font-semibold border transition-all duration-200 active:scale-98"
+          className="w-full py-3 rounded-2xl text-sm font-semibold border transition-all duration-200 active:scale-98 hover:shadow-md"
           style={{
             borderColor: "var(--border)",
             color: "var(--text-secondary)",
@@ -355,95 +448,157 @@ export default function HomePage() {
   }
 
   return (
-    <div className="space-y-6 mt-6">
-      <div className="flex items-center justify-center">
+    <>
+      {/* Global drag overlay */}
+      {bodyDragging && (
         <div
-          className="inline-flex rounded-full p-1 border shadow-sm backdrop-blur-sm"
-          style={{ background: "var(--bg-card)", borderColor: "var(--border)" }}
+          className="fixed inset-0 z-40 flex items-center justify-center backdrop-blur-sm pointer-events-none"
+          style={{ background: "rgba(59, 130, 246, 0.08)" }}
         >
-          <button
-            onClick={() => {
-              setMode("file");
-              setFile(null);
-              setError(null);
-            }}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold transition-all duration-200"
+          <div
+            className="flex flex-col items-center gap-4 p-10 rounded-3xl border-2 border-dashed animate-in"
             style={{
-              background: mode === "file" ? "var(--accent)" : "transparent",
-              color: mode === "file" ? "#ffffff" : "var(--text-secondary)",
+              borderColor: "var(--accent)",
+              background: "color-mix(in srgb, var(--bg-card) 95%, transparent)",
             }}
           >
-            <UploadIcon size={14} />
-            File
-          </button>
-          <button
-            onClick={() => {
-              setMode("paste");
-              setError(null);
-            }}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold transition-all duration-200"
-            style={{
-              background: mode === "paste" ? "var(--accent)" : "transparent",
-              color: mode === "paste" ? "#ffffff" : "var(--text-secondary)",
-            }}
-          >
-            <PasteIcon size={14} />
-            Paste
-          </button>
+            <UploadIcon size={48} style={{ color: "var(--accent)" }} />
+            <p className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
+              Drop anywhere to upload
+            </p>
+          </div>
         </div>
-      </div>
-
-      {mode === "file" ? (
-        <UploadZone
-          onFileSelect={setFile}
-          selectedFile={file}
-          onClear={() => setFile(null)}
-          uploading={false}
-        />
-      ) : (
-        <PasteEditor value={pasteContent} onChange={setPasteContent} />
       )}
 
-      {hasContent && (
-        <div className="space-y-3 animate-in">
-          <ShareOptions
-            expiry={expiry}
-            onExpiryChange={setExpiry}
-            password={password}
-            onPasswordChange={setPassword}
-            isPublic={isPublic}
-            onPublicChange={setIsPublic}
-          />
+      <div className="space-y-6 mt-6">
+        {/* Hero text */}
+        <div ref={heroRef} className="text-center space-y-2 mb-2">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight" style={{ color: "var(--text-primary)" }}>
+            Share anything, instantly
+          </h1>
+          <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+            Files, text, code. Encrypted and self-destructing.
+          </p>
+        </div>
 
-          {error && (
-            <div
-              className="p-2.5 rounded-xl text-xs text-center border"
-              style={{
-                background: "rgba(239, 68, 68, 0.08)",
-                borderColor: "var(--danger)",
-                color: "var(--danger)",
-              }}
-            >
-              {error}
+        {/* Mac Window Modal / Studio */}
+        <div ref={uploadRef} className="mac-window">
+          {/* Mac Window Header / Titlebar */}
+          <div className="flex items-center justify-between px-4 py-3 border-b select-none border-slate-200/80 dark:border-blue-500/20 bg-slate-50/90 dark:bg-[rgba(10,16,32,0.85)] transition-colors">
+            {/* Traffic Light Dots */}
+            <div className="flex items-center gap-2">
+              <span className="mac-dot mac-dot-red" />
+              <span className="mac-dot mac-dot-yellow" />
+              <span className="mac-dot mac-dot-green" />
             </div>
-          )}
 
-          <button
-            onClick={handleShare}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 active:scale-98 shadow-sm"
-            style={{ background: "var(--accent)", color: "#ffffff" }}
-          >
-            <CheckIcon size={14} />
-            <span>{mode === "file" ? "Share File" : "Share Paste"}</span>
-          </button>
+            {/* Centered Segmented Tabs with persistence indicator */}
+            <div className="inline-flex p-1 rounded-xl border gap-1 border-slate-200/80 bg-white dark:border-blue-500/25 dark:bg-[rgba(6,9,18,0.9)] shadow-sm transition-colors">
+              <button
+                type="button"
+                onClick={() => {
+                  setMode("file");
+                  setError(null);
+                }}
+                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
+                  mode === "file"
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
+                }`}
+              >
+                <UploadIcon size={13} />
+                <span>File</span>
+                {file && (
+                  <span
+                    className={`w-2 h-2 rounded-full ring-2 ${
+                      mode === "file" ? "bg-white ring-white/30" : "bg-blue-600 ring-blue-500/20"
+                    }`}
+                    title={file.name}
+                  />
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setMode("paste");
+                  setError(null);
+                }}
+                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
+                  mode === "paste"
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
+                }`}
+              >
+                <PasteIcon size={13} />
+                <span>Paste</span>
+                {pasteContent.trim().length > 0 && (
+                  <span
+                    className={`w-2 h-2 rounded-full ring-2 ${
+                      mode === "paste" ? "bg-white ring-white/30" : "bg-emerald-500 ring-emerald-500/20"
+                    }`}
+                  />
+                )}
+              </button>
+            </div>
+
+            {/* Spacer for symmetry with traffic lights */}
+            <div className="w-12" />
+          </div>
+
+          {/* Window Body */}
+          <div className="w-full">
+            {mode === "file" ? (
+              <div className="p-4 sm:p-6">
+                <UploadZone
+                  onFileSelect={setFile}
+                  selectedFile={file}
+                  onClear={() => setFile(null)}
+                  uploading={false}
+                  onShare={() => setIsModalOpen(true)}
+                />
+              </div>
+            ) : (
+              <PasteEditor
+                value={pasteContent}
+                onChange={setPasteContent}
+                onShare={() => setIsModalOpen(true)}
+              />
+            )}
+          </div>
         </div>
-      )}
 
-      {error && !hasContent && (
-        <p className="text-xs text-center" style={{ color: "var(--danger)" }}>
-          {error}
-        </p>
-      )}
-    </div>
+        {error && (
+          <div
+            className="p-3 rounded-xl text-xs text-center border animate-in"
+            style={{
+              background: "rgba(239, 68, 68, 0.08)",
+              borderColor: "var(--danger)",
+              color: "var(--danger)",
+            }}
+          >
+            {error}
+          </div>
+        )}
+
+        {/* Share Settings Modal */}
+        <ShareModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onConfirm={handleShare}
+          type={mode}
+          file={file}
+          pasteLength={pasteContent.length}
+          pasteLines={pasteContent.split("\n").length}
+          expiry={expiry}
+          onExpiryChange={setExpiry}
+          password={password}
+          onPasswordChange={setPassword}
+          isPublic={isPublic}
+          onPublicChange={setIsPublic}
+          isUploading={uploadProgress > 0 && uploadProgress < 100}
+        />
+      </div>
+    </>
   );
 }

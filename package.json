@@ -11,6 +11,7 @@
   "dependencies": {
     "@uploadthing/react": "^7.1.5",
     "@upstash/redis": "^1.39.0",
+    "gsap": "^3.15.0",
     "nanoid": "^5.0.9",
     "next": "^15.1.0",
     "react": "^19.0.0",

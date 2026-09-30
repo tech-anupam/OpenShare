@@ -23,18 +23,25 @@ export function StarsBadge() {
       href={GITHUB_URL}
       target="_blank"
       rel="noopener noreferrer"
-      title="Star tech-anupam/OpenShare on GitHub"
-      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium transition-colors duration-200 hover:opacity-80"
+      title="Star us on GitHub"
+      className="group flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 hover:opacity-80"
       style={{
-        color: "var(--text-secondary)",
-        background: "var(--bg-elevated)",
+        color: "var(--text-muted)",
       }}
     >
-      <StarIcon size={13} style={{ color: "#f59e0b", fill: "#f59e0b" }} />
-      <span className="hidden md:inline">Star</span>
-      <span className="font-semibold" style={{ color: "var(--text-primary)" }}>
-        {count !== null ? count : "0"}
-      </span>
+      <StarIcon
+        size={13}
+        style={{ color: "#f59e0b", fill: "#f59e0b" }}
+      />
+      <span>Star</span>
+      {count !== null && (
+        <span
+          className="font-semibold tabular-nums"
+          style={{ color: "var(--text-primary)" }}
+        >
+          {count >= 1000 ? `${(count / 1000).toFixed(1)}k` : count}
+        </span>
+      )}
     </a>
   );
 }

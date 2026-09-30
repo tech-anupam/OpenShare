@@ -3,6 +3,7 @@ import Script from "next/script";
 import "@/styles/globals.css";
 import { ThemeProvider } from "@/hooks/use-theme";
 import { Navbar } from "@/components/navbar";
+import { Footer } from "@/components/footer";
 import { SplashScreen } from "@/components/splash-screen";
 import { WebGLBackground } from "@/components/webgl-background";
 import { ToastProvider } from "@/components/toast";
@@ -40,6 +41,7 @@ export default function RootLayout({
             <main className="relative z-10 pt-20 pb-12 px-4 mx-auto max-w-2xl min-h-screen">
               {children}
             </main>
+            <Footer />
           </ToastProvider>
         </ThemeProvider>
       </body>

@@ -1,7 +1,7 @@
 "use client";
 
 import { EXPIRY_OPTIONS } from "@/lib/constants";
-import { ClockIcon, LockIcon, GlobeIcon, EyeIcon, EyeOffIcon } from "@/components/icons";
+import { ClockIcon, LockIcon, GlobeIcon, EyeIcon, EyeOffIcon, ShieldIcon, InfoIcon } from "@/components/icons";
 import { useState } from "react";
 
 interface ShareOptionsProps {
@@ -22,123 +22,199 @@ export function ShareOptions({
   onPublicChange,
 }: ShareOptionsProps) {
   const [showPassword, setShowPassword] = useState(false);
+  const [showPasswordField, setShowPasswordField] = useState(!!password);
 
   return (
-    <div
-      className="rounded-2xl border divide-y overflow-hidden shadow-sm backdrop-blur-md"
-      style={{
-        background: "var(--bg-card)",
-        borderColor: "var(--border)",
-      }}
-    >
-      <div className="flex items-center justify-between px-3.5 py-2.5">
-        <div className="flex items-center gap-2">
-          <div
-            className="flex items-center justify-center w-6 h-6 rounded-lg shrink-0"
-            style={{ background: "var(--bg-elevated)", color: "var(--text-muted)" }}
-          >
-            <ClockIcon size={13} />
-          </div>
-          <span className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>
-            Expiry
-          </span>
-        </div>
-
-        <div
-          className="inline-flex p-0.5 rounded-lg border gap-0.5"
-          style={{
-            background: "var(--bg-elevated)",
-            borderColor: "var(--border)",
-          }}
-        >
-          {EXPIRY_OPTIONS.map((opt) => {
-            const active = expiry === opt.value;
-            return (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => onExpiryChange(opt.value)}
-                className="px-2 py-0.5 rounded-md text-[11px] font-semibold transition-all duration-150"
-                style={{
-                  background: active ? "var(--accent)" : "transparent",
-                  color: active ? "#ffffff" : "var(--text-muted)",
-                  boxShadow: active ? "0 1px 3px rgba(0, 0, 0, 0.15)" : "none",
-                }}
-              >
-                {opt.label.replace(" hours", "h").replace(" hour", "h").replace(" days", "d")}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="flex items-center px-3.5 py-2 gap-2">
-        <div
-          className="flex items-center justify-center w-6 h-6 rounded-lg shrink-0"
-          style={{
-            background: password ? "var(--accent)" : "var(--bg-elevated)",
-            color: password ? "#ffffff" : "var(--text-muted)",
-          }}
-        >
-          <LockIcon size={13} />
-        </div>
-        <input
-          type={showPassword ? "text" : "password"}
-          value={password}
-          onChange={(e) => onPasswordChange(e.target.value)}
-          placeholder="Password protect (optional)"
-          className="flex-1 text-xs bg-transparent outline-none py-1 placeholder:text-[var(--text-muted)]"
-          style={{ color: "var(--text-primary)" }}
-        />
-        {password.length > 0 && (
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="p-1 hover:opacity-75 transition-opacity"
-            style={{ color: "var(--text-muted)" }}
-          >
-            {showPassword ? <EyeOffIcon size={14} /> : <EyeIcon size={14} />}
-          </button>
-        )}
+    <div className="space-y-3">
+      {/* Section header */}
+      <div className="flex items-center gap-2 px-1">
+        <ShieldIcon size={14} style={{ color: "var(--text-muted)" }} />
+        <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
+          Share Settings
+        </span>
       </div>
 
       <div
-        className="flex items-center justify-between px-3.5 py-2.5 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors select-none"
-        onClick={() => onPublicChange(!isPublic)}
+        className="rounded-2xl border overflow-hidden shadow-sm"
+        style={{
+          background: "var(--bg-card)",
+          borderColor: "var(--border)",
+        }}
       >
-        <div className="flex items-center gap-2">
-          <div
-            className="flex items-center justify-center w-6 h-6 rounded-lg shrink-0"
-            style={{
-              background: isPublic ? "rgba(6, 182, 212, 0.15)" : "var(--bg-elevated)",
-              color: isPublic ? "#06b6d4" : "var(--text-muted)",
-            }}
-          >
-            <GlobeIcon size={13} />
+        {/* Expiry */}
+        <div className="px-4 py-3.5" style={{ borderBottom: "1px solid var(--border)" }}>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2.5">
+              <div
+                className="flex items-center justify-center w-7 h-7 rounded-lg"
+                style={{ background: "rgba(59, 130, 246, 0.1)", color: "var(--accent)" }}
+              >
+                <ClockIcon size={14} />
+              </div>
+              <div>
+                <span className="text-xs font-semibold block" style={{ color: "var(--text-primary)" }}>
+                  Auto-expire
+                </span>
+                <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                  Content is deleted after this period
+                </span>
+              </div>
+            </div>
           </div>
-          <div>
-            <p className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>
-              Public Archives
-            </p>
-            <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>
-              {isPublic ? "Visible in public explore list" : "Unlisted, direct link only"}
-            </p>
+
+          <div className="grid grid-cols-4 gap-1.5">
+            {EXPIRY_OPTIONS.map((opt) => {
+              const active = expiry === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => onExpiryChange(opt.value)}
+                  className="px-2 py-2 rounded-xl text-xs font-semibold transition-all duration-200"
+                  style={{
+                    background: active ? "var(--accent)" : "var(--bg-elevated)",
+                    color: active ? "#ffffff" : "var(--text-muted)",
+                    boxShadow: active ? "0 2px 8px rgba(59, 130, 246, 0.3)" : "none",
+                  }}
+                >
+                  {opt.label.replace(" hours", "h").replace(" hour", "h").replace(" days", "d")}
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        <div
-          className="w-8 h-4 rounded-full relative transition-colors duration-200"
-          style={{
-            background: isPublic ? "var(--accent)" : "var(--bg-elevated)",
-          }}
-        >
+        {/* Password protection */}
+        <div className="px-4 py-3.5" style={{ borderBottom: "1px solid var(--border)" }}>
           <div
-            className="absolute top-0.5 w-3 h-3 rounded-full transition-transform duration-200"
-            style={{
-              background: "#ffffff",
-              transform: isPublic ? "translateX(17px)" : "translateX(2px)",
+            className="flex items-center justify-between cursor-pointer select-none"
+            onClick={() => {
+              if (showPasswordField && password) {
+                onPasswordChange("");
+              }
+              setShowPasswordField(!showPasswordField);
             }}
-          />
+          >
+            <div className="flex items-center gap-2.5">
+              <div
+                className="flex items-center justify-center w-7 h-7 rounded-lg transition-colors"
+                style={{
+                  background: password ? "var(--accent)" : "rgba(245, 158, 11, 0.1)",
+                  color: password ? "#ffffff" : "#f59e0b",
+                }}
+              >
+                <LockIcon size={14} />
+              </div>
+              <div>
+                <span className="text-xs font-semibold block" style={{ color: "var(--text-primary)" }}>
+                  Password Protection
+                </span>
+                <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                  {password ? "Encrypted. Viewers need the password to access" : "Optional. Restrict who can view this"}
+                </span>
+              </div>
+            </div>
+
+            <div
+              className="w-9 h-5 rounded-full relative transition-colors duration-200 shrink-0"
+              style={{
+                background: showPasswordField ? "var(--accent)" : "var(--bg-elevated)",
+              }}
+            >
+              <div
+                className="absolute top-0.5 w-4 h-4 rounded-full transition-transform duration-200 shadow-sm"
+                style={{
+                  background: "#ffffff",
+                  transform: showPasswordField ? "translateX(17px)" : "translateX(2px)",
+                }}
+              />
+            </div>
+          </div>
+
+          {showPasswordField && (
+            <div className="mt-3 animate-in">
+              <div
+                className="flex items-center rounded-xl border px-3 py-2.5 gap-2 transition-colors"
+                style={{
+                  borderColor: password ? "var(--accent)" : "var(--border)",
+                  background: "var(--bg-elevated)",
+                }}
+              >
+                <LockIcon size={14} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => onPasswordChange(e.target.value)}
+                  placeholder="Enter a secure password"
+                  autoFocus
+                  className="flex-1 text-xs bg-transparent outline-none placeholder:text-[var(--text-muted)]"
+                  style={{ color: "var(--text-primary)" }}
+                />
+                {password.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowPassword(!showPassword);
+                    }}
+                    className="p-1 hover:opacity-75 transition-opacity"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    {showPassword ? <EyeOffIcon size={14} /> : <EyeIcon size={14} />}
+                  </button>
+                )}
+              </div>
+              {password && (
+                <div className="flex items-center gap-1.5 mt-2 px-1">
+                  <ShieldIcon size={10} style={{ color: "var(--success)" }} />
+                  <span className="text-[10px] font-medium" style={{ color: "var(--success)" }}>
+                    End-to-end encrypted
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Public toggle */}
+        <div
+          className="flex items-center justify-between px-4 py-3.5 cursor-pointer select-none transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.02]"
+          onClick={() => onPublicChange(!isPublic)}
+        >
+          <div className="flex items-center gap-2.5">
+            <div
+              className="flex items-center justify-center w-7 h-7 rounded-lg transition-colors"
+              style={{
+                background: isPublic ? "rgba(6, 182, 212, 0.12)" : "var(--bg-elevated)",
+                color: isPublic ? "#06b6d4" : "var(--text-muted)",
+              }}
+            >
+              <GlobeIcon size={14} />
+            </div>
+            <div>
+              <p className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>
+                Public Archives
+              </p>
+              <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                {isPublic ? "Visible in public explore" : "Unlisted. Only accessible via direct link"}
+              </p>
+            </div>
+          </div>
+
+          <div
+            className="w-9 h-5 rounded-full relative transition-colors duration-200 shrink-0"
+            style={{
+              background: isPublic ? "#06b6d4" : "var(--bg-elevated)",
+            }}
+          >
+            <div
+              className="absolute top-0.5 w-4 h-4 rounded-full transition-transform duration-200 shadow-sm"
+              style={{
+                background: "#ffffff",
+                transform: isPublic ? "translateX(17px)" : "translateX(2px)",
+              }}
+            />
+          </div>
         </div>
       </div>
     </div>

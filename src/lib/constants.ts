@@ -31,3 +31,11 @@ export const GREETINGS = [
   { text: "Hallo", lang: "German" },
   { text: "Ol\u00E1", lang: "Portuguese" },
 ];
+
+export const SOCIAL_LINKS = [
+  { name: "GitHub", url: "https://github.com/tech-anupam", type: "github" },
+  { name: "YouTube", url: "https://youtube.com/@tech.anupam", type: "youtube" },
+  { name: "Instagram", url: "https://instagram.com/tech.anupam", type: "instagram" },
+  { name: "Twitter", url: "https://x.com/AnupamBuilds", type: "twitter" },
+  { name: "Discord", url: "https://discord.gg/MNCdjVcbtc", type: "discord" },
+] as const;

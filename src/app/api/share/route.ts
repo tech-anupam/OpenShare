@@ -68,10 +68,11 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ id, expires_at: expiresAt });
-  } catch {
+  } catch (error) {
+    console.error("Failed to create share:", error);
     return NextResponse.json(
       { error: "Failed to create share" },
-      { status: 500 }
+      { status: 500, headers: { "Cache-Control": "no-store" } }
     );
   }
 }

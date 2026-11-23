@@ -292,9 +292,6 @@ export default function HomePage() {
         } catch {}
 
         if (!uploadedUrlResult) {
-          if (!process.env.NEXT_PUBLIC_UPLOADTHING_ENABLED) {
-            throw new Error("No anonymous file provider is currently available.");
-          }
           const fallback = await startUpload([file]);
           if (!fallback?.length) {
             throw new Error("Upload failed. Please try again.");

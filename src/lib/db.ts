@@ -1,4 +1,5 @@
 import fs from "fs";
+import os from "os";
 import path from "path";
 
 export interface Share {
@@ -18,7 +19,10 @@ export interface Share {
   views: number;
 }
 
-const DATA_DIR = path.join(process.cwd(), "data", "shares");
+const DATA_DIR =
+  process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME
+    ? path.join(os.tmpdir(), "openshare", "shares")
+    : path.join(process.cwd(), "data", "shares");
 const shareCache = new Map<string, Share>();
 
 function ensureDir(): boolean {

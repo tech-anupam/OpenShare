@@ -292,14 +292,17 @@ export default function HomePage() {
         } catch {}
 
         if (!uploadedUrlResult) {
-          if (!process.env.NEXT_PUBLIC_UPLOADTHING_ENABLED) {
-            throw new Error("No anonymous file provider is currently available.");
+          if (process.env.NEXT_PUBLIC_UPLOADTHING_ENABLED === "true") {
+            const fallback = await startUpload([file]);
+            if (fallback?.length) {
+              uploadedUrlResult = fallback[0].ufsUrl;
+            }
           }
-          const fallback = await startUpload([file]);
-          if (!fallback?.length) {
-            throw new Error("Upload failed. Please try again.");
+          if (!uploadedUrlResult) {
+            throw new Error(
+              "No free file provider is available right now. Please try again later."
+            );
           }
-          uploadedUrlResult = fallback[0].ufsUrl;
         }
 
         setUploadProgress(90);

@@ -6,12 +6,13 @@ export const ourFileRouter = {
   fileUploader: f({
     blob: { maxFileSize: "512MB", maxFileCount: 1 },
   })
-    .middleware(async () => {
-      return {};
-    })
-    .onUploadComplete(async ({ file }) => {
-      return { url: file.ufsUrl, name: file.name, size: file.size, type: file.type };
-    }),
+    .middleware(async () => ({}))
+    .onUploadComplete(async ({ file }) => ({
+      url: file.ufsUrl,
+      name: file.name,
+      size: file.size,
+      type: file.type,
+    })),
 } satisfies FileRouter;
 
 export type OurFileRouter = typeof ourFileRouter;

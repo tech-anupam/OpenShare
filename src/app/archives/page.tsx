@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { LockIcon, EyeIcon, ClockIcon } from "@/components/icons";
 import { MockAvatar } from "@/components/mock-avatar";
@@ -91,20 +91,57 @@ function getTypeBadge(share: PublicShare): { label: string; bg: string; text: st
 export default function ArchivesPage() {
   const [shares, setShares] = useState<PublicShare[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState<SortOption>("newest");
   const [filter, setFilter] = useState<FilterOption>("all");
 
-  useEffect(() => {
-    fetch("/api/shares/public")
-      .then((r) => r.json())
-      .then((data) => setShares(data))
-      .catch(() => {})
-      .finally(() => setLoading(false));
+  const refreshShares = useCallback(async (showLoading = false) => {
+    if (showLoading) setLoading(true);
+    setRefreshing(true);
+    try {
+      const res = await fetch("/api/shares/public", {
+        cache: "no-store",
+        headers: { Accept: "application/json" },
+      });
+      if (!res.ok) throw new Error("Archive unavailable");
+      const data = (await res.json()) as PublicShare[];
+      setShares(Array.isArray(data) ? data : []);
+    } catch {
+      setShares([]);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, []);
 
+  useEffect(() => {
+    void refreshShares(true);
+
+    const refreshOnFocus = () => {
+      if (document.visibilityState === "visible") void refreshShares();
+    };
+    document.addEventListener("visibilitychange", refreshOnFocus);
+    window.addEventListener("focus", refreshOnFocus);
+    return () => {
+      document.removeEventListener("visibilitychange", refreshOnFocus);
+      window.removeEventListener("focus", refreshOnFocus);
+    };
+  }, [refreshShares]);
+
   const processedShares = useMemo(() => {
+    const query = search.trim().toLowerCase();
     const filtered = shares.filter((s) => {
+      if (query) {
+        const searchable = [
+          s.id,
+          s.file_name || "",
+          s.file_type || "",
+          s.type,
+        ].join(" ").toLowerCase();
+        if (!searchable.includes(query)) return false;
+      }
       if (filter === "file") return s.type === "file";
       if (filter === "paste") return s.type === "paste";
       if (filter === "image") return s.file_type?.startsWith("image/");
@@ -120,7 +157,7 @@ export default function ArchivesPage() {
     });
 
     return filtered;
-  }, [shares, filter, sort]);
+  }, [shares, filter, sort, search]);
 
   const totalPages = Math.max(1, Math.ceil(processedShares.length / ITEMS_PER_PAGE));
   const currentShares = processedShares.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
@@ -162,6 +199,33 @@ export default function ArchivesPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          <input
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            placeholder="Search archives"
+            className="hidden sm:block w-36 lg:w-48 text-xs font-semibold px-3 py-1.5 rounded-xl border outline-none"
+            style={{
+              background: "var(--bg-card)",
+              borderColor: "var(--border)",
+              color: "var(--text-primary)",
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => void refreshShares()}
+            disabled={refreshing}
+            className="text-xs font-semibold px-2.5 py-1.5 rounded-xl border disabled:opacity-60"
+            style={{
+              background: "var(--bg-card)",
+              borderColor: "var(--border)",
+              color: "var(--text-primary)",
+            }}
+          >
+            {refreshing ? "Refreshing..." : "Refresh"}
+          </button>
           <select
             value={filter}
             onChange={(e) => handleFilterChange(e.target.value as FilterOption)}
@@ -202,11 +266,12 @@ export default function ArchivesPage() {
           <p className="text-sm font-medium" style={{ color: "var(--text-muted)" }}>
             No matching shares found
           </p>
-          {(filter !== "all" || sort !== "newest") && (
+          {(filter !== "all" || sort !== "newest" || search) && (
             <button
               onClick={() => {
                 setFilter("all");
                 setSort("newest");
+                setSearch("");
                 setPage(1);
               }}
               className="text-xs underline"

@@ -38,7 +38,13 @@ export async function POST(req: NextRequest) {
 
     const id = createId();
     const now = Date.now();
-    const expiresAt = now + (expiry || DEFAULT_EXPIRY) * 1000;
+    const requestedExpiry =
+      typeof expiry === "number" ? expiry : Number(expiry);
+    const allowedExpiry = [3600, 21600, 86400, 604800];
+    const expirySeconds = allowedExpiry.includes(requestedExpiry)
+      ? requestedExpiry
+      : DEFAULT_EXPIRY;
+    const expiresAt = now + expirySeconds * 1000;
 
     let passwordHash: string | null = null;
     if (password) {

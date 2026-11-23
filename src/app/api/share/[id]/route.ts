@@ -9,13 +9,20 @@ export async function GET(
 ) {
   const { id } = await params;
   const share = await getShare(id);
+  const noStore = { "Cache-Control": "no-store, max-age=0" };
 
   if (!share) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return NextResponse.json(
+      { error: "Not found" },
+      { status: 404, headers: noStore }
+    );
   }
 
   if (share.expires_at <= Date.now()) {
-    return NextResponse.json({ error: "Expired" }, { status: 410 });
+    return NextResponse.json(
+      { error: "Expired" },
+      { status: 410, headers: noStore }
+    );
   }
 
   const meta = {

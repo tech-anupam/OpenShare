@@ -50,13 +50,23 @@ export function ViewShareClient({ id }: { id: string }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`/api/share/${id}`)
-      .then((r) => {
-        if (r.status === 404) throw new Error("not_found");
-        if (r.status === 410) throw new Error("expired");
-        return r.json();
-      })
-      .then((data) => {
+    let cancelled = false;
+
+    const loadShare = async (attempt = 0) => {
+      try {
+        const res = await fetch(`/api/share/${id}`, {
+          cache: "no-store",
+          headers: { Accept: "application/json" },
+        });
+        if (res.status === 404 && attempt < 2) {
+          await new Promise((resolve) => setTimeout(resolve, 250 * (attempt + 1)));
+          if (!cancelled) return loadShare(attempt + 1);
+        }
+        if (res.status === 404) throw new Error("not_found");
+        if (res.status === 410) throw new Error("expired");
+        if (!res.ok) throw new Error("load_failed");
+        const data = await res.json();
+        if (cancelled) return;
         setMeta(data);
         if (data.cdn) setCdnUrls(data.cdn);
         if (data.content) {
@@ -66,13 +76,19 @@ export function ViewShareClient({ id }: { id: string }) {
             setContent(data.content);
           }
         }
-      })
-      .catch((err) => {
-        setError(err.message);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "load_failed");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    void loadShare();
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   const toast = useToast();
@@ -141,6 +157,20 @@ export function ViewShareClient({ id }: { id: string }) {
         </p>
         <p className="text-sm" style={{ color: "var(--text-muted)" }}>
           This share has passed its expiration time.
+        </p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 min-h-[60vh]">
+        <ShieldIcon size={32} style={{ color: "var(--text-muted)" }} />
+        <p className="text-lg font-medium" style={{ color: "var(--text-primary)" }}>
+          Could not load this share
+        </p>
+        <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+          Please refresh or try opening the link again.
         </p>
       </div>
     );

@@ -16,5 +16,9 @@ export async function GET() {
     views: s.views,
   }));
 
-  return NextResponse.json(safe);
+  return NextResponse.json(safe, {
+    headers: {
+      "Cache-Control": "no-store, max-age=0",
+    },
+  });
 }

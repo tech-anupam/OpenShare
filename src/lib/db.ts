@@ -83,13 +83,25 @@ export async function createShare(share: Omit<Share, "views">): Promise<void> {
         });
       }
       return;
-    } catch {}
+    } catch (error) {
+      console.error("Failed to persist share in Redis:", error);
+      if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
+        throw new Error("Redis persistence is unavailable");
+      }
+    }
+  }
+
+  if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
+    throw new Error("Redis is required for persistent shares");
   }
 
   ensureDir();
   try {
     fs.writeFileSync(sharePath(share.id), JSON.stringify(full), "utf-8");
-  } catch {}
+  } catch (error) {
+    console.error("Failed to persist share locally:", error);
+    throw new Error("Share storage is unavailable");
+  }
 }
 
 export async function getShare(id: string): Promise<Share | null> {
@@ -98,12 +110,17 @@ export async function getShare(id: string): Promise<Share | null> {
   if (redis) {
     try {
       const data = await redis.get<Share | string>(`share:${id}`);
-      if (!data) return null;
+      if (!data) {
+        // Continue to local storage for warm-server/dev compatibility.
+      } else {
       if (typeof data === "string") {
         return JSON.parse(data) as Share;
       }
       return data as Share;
-    } catch {}
+      }
+    } catch (error) {
+      console.error(`Failed to read share ${id} from Redis:`, error);
+    }
   }
 
   const fp = sharePath(id);
@@ -228,13 +245,17 @@ export async function getPublicShares(limit: number = 20): Promise<Share[]> {
           typeof item === "string" ? (JSON.parse(item) as Share) : item;
         if (share && share.is_public && share.expires_at > now) {
           shares.push(share);
-        } else if (share && share.expires_at <= now) {
+        } else if (!share || share.expires_at <= now || !share.is_public) {
           await redis.zrem("public_shares", id);
-          await redis.del(`share:${id}`);
+          if (!share || share.expires_at <= now) {
+            await redis.del(`share:${id}`);
+          }
         }
       }
       return shares;
-    } catch {}
+    } catch (error) {
+      console.error("Failed to read public shares from Redis:", error);
+    }
   }
 
   const ok = ensureDir();

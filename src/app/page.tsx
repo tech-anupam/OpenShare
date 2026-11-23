@@ -292,11 +292,17 @@ export default function HomePage() {
         } catch {}
 
         if (!uploadedUrlResult) {
-          const fallback = await startUpload([file]);
-          if (!fallback?.length) {
-            throw new Error("Upload failed. Please try again.");
+          if (process.env.NEXT_PUBLIC_UPLOADTHING_ENABLED === "true") {
+            const fallback = await startUpload([file]);
+            if (fallback?.length) {
+              uploadedUrlResult = fallback[0].ufsUrl;
+            }
           }
-          uploadedUrlResult = fallback[0].ufsUrl;
+          if (!uploadedUrlResult) {
+            throw new Error(
+              "No free file provider is available right now. Please try again later."
+            );
+          }
         }
 
         setUploadProgress(90);

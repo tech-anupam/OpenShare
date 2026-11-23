@@ -5,6 +5,25 @@ export const dynamic = "force-dynamic";
 
 const MAX_BYTES = 512 * 1024 * 1024;
 
+async function uploadToTransferSh(file: File): Promise<string | null> {
+  try {
+    const response = await fetch(
+      `https://transfer.sh/${encodeURIComponent(file.name)}`,
+      {
+        method: "PUT",
+        body: file,
+        headers: file.type ? { "Content-Type": file.type } : undefined,
+        signal: AbortSignal.timeout(20_000),
+      }
+    );
+    if (!response.ok) return null;
+    const url = (await response.text()).trim();
+    return /^https?:\/\//.test(url) ? url : null;
+  } catch {
+    return null;
+  }
+}
+
 async function uploadToZeroXZero(file: File): Promise<string | null> {
   const body = new FormData();
   body.append("file", file);
@@ -62,7 +81,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const url = (await uploadToZeroXZero(file)) || (await uploadToCatbox(file));
+    const [transferUrl, zeroUrl, catboxUrl] = await Promise.all([
+      uploadToTransferSh(file),
+      uploadToZeroXZero(file),
+      uploadToCatbox(file),
+    ]);
+    const url = transferUrl || zeroUrl || catboxUrl;
     if (!url) {
       return NextResponse.json(
         { error: "No anonymous file provider is currently available" },

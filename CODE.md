@@ -61,10 +61,10 @@ sequenceDiagram
 ### Environment Configuration
 
 ```env
-# Storage & Database
+# Storage
+# Anonymous providers are used first; UploadThing is optional fallback storage.
 UPLOADTHING_TOKEN=
-UPSTASH_REDIS_REST_URL=
-UPSTASH_REDIS_REST_TOKEN=
+NEXT_PUBLIC_UPLOADTHING_ENABLED=false
 
 # App & CDN
 NEXT_PUBLIC_APP_URL=https://opensharee.vercel.app

@@ -5,6 +5,7 @@ import { UploadZone } from "@/components/upload-zone";
 import { PasteEditor } from "@/components/paste-editor";
 import { ShareModal } from "@/components/share-modal";
 import { ShareResult } from "@/components/share-result";
+import { useUploadThing } from "@/lib/uploadthing";
 import { ViewFile } from "@/components/view-file";
 import { ViewPaste } from "@/components/view-paste";
 import {
@@ -16,7 +17,6 @@ import {
   OpenShareLogo,
 } from "@/components/icons";
 import { DEFAULT_EXPIRY } from "@/lib/constants";
-import { useUploadThing } from "@/lib/uploadthing";
 import { encrypt } from "@/lib/crypto";
 import { trackShareCreated } from "@/lib/analytics";
 import { useToast } from "@/components/toast";
@@ -165,8 +165,8 @@ export default function HomePage() {
 
   const toast = useToast();
   const { startUpload } = useUploadThing("fileUploader", {
-    onUploadProgress: (p) => {
-      setUploadProgress(Math.max(10, Math.min(p, 88)));
+    onUploadProgress: (progress) => {
+      setUploadProgress(Math.max(10, Math.min(progress, 88)));
     },
   });
 
@@ -278,16 +278,32 @@ export default function HomePage() {
 
     try {
       if (mode === "file" && file) {
-        const uploadResult = await startUpload([file]);
+        setUploadProgress(15);
+        const uploadForm = new FormData();
+        uploadForm.append("file", file);
+        let uploadedUrlResult: string | null = null;
+        try {
+          const uploadResponse = await fetch("/api/upload", {
+            method: "POST",
+            body: uploadForm,
+          });
+          const uploaded = await uploadResponse.json();
+          if (uploadResponse.ok) uploadedUrlResult = uploaded.url;
+        } catch {}
 
-        if (!uploadResult || uploadResult.length === 0) {
-          throw new Error("Upload failed. Please check network and try again.");
+        if (!uploadedUrlResult) {
+          if (!process.env.NEXT_PUBLIC_UPLOADTHING_ENABLED) {
+            throw new Error("No anonymous file provider is currently available.");
+          }
+          const fallback = await startUpload([file]);
+          if (!fallback?.length) {
+            throw new Error("Upload failed. Please try again.");
+          }
+          uploadedUrlResult = fallback[0].ufsUrl;
         }
 
         setUploadProgress(90);
-
-        const uploaded = uploadResult[0];
-        let content = uploaded.ufsUrl;
+        let content = uploadedUrlResult;
         let encSalt: string | null = null;
         let encIv: string | null = null;
         let isEncrypted = false;
